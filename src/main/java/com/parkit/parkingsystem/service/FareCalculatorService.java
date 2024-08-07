@@ -10,9 +10,11 @@ public class FareCalculatorService {
             throw new IllegalArgumentException("Out time provided is incorrect:"+ticket.getOutTime().toString());
         }
 
+        //Fix Léa : Changer le type de variable en long et modifier getHours(). en getTime().
         long inHour = ticket.getInTime().getTime();
         long outHour = ticket.getOutTime().getTime();
 
+        //Fix Léa : Changer le type de variable en double, puis convertir les millisecondes en heures.
         double duration = (outHour - inHour) /(1000.0 * 60 * 60);
 
         switch (ticket.getParkingSpot().getParkingType()){
@@ -24,7 +26,7 @@ public class FareCalculatorService {
                 ticket.setPrice(duration * Fare.BIKE_RATE_PER_HOUR);
                 break;
             }
-            default: throw new IllegalArgumentException("Unkown Parking Type");
+            default: throw new IllegalArgumentException("Unknown Parking Type");
         }
     }
 }

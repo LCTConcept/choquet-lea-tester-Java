@@ -19,11 +19,13 @@ public class FareCalculatorServiceTest {
     private Ticket ticket;
 
     @BeforeAll
+    // Changement de l'accès en public.
     public static void setUp() {
         fareCalculatorService = new FareCalculatorService();
     }
 
     @BeforeEach
+    // Changement de l'accès en public.
     public void setUpPerTest() {
         ticket = new Ticket();
     }
