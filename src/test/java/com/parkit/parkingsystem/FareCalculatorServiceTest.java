@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static java.lang.Math.round;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Date;
@@ -125,7 +126,6 @@ public class FareCalculatorServiceTest {
         ticket.setParkingSpot(parkingSpot);
         fareCalculatorService.calculateFare(ticket);
         assertEquals((24 * Fare.CAR_RATE_PER_HOUR), ticket.getPrice());
-        System.out.println("Le prix est de :" + ticket.getPrice());
     }
 
     @Test
@@ -160,5 +160,35 @@ public class FareCalculatorServiceTest {
         fareCalculatorService.calculateFare(ticket);
         //Vérification du calcul
         assertEquals(0, ticket.getPrice());
+    }
+
+    @Test
+    public void calculateFareCarWithDiscount() {
+        Date inTime = new Date();
+        inTime.setTime(System.currentTimeMillis() - (45 * 60 * 1000));
+        Date outTime = new Date();
+        outTime.setTime(System.currentTimeMillis());
+        ParkingSpot parkingSpot = new ParkingSpot(1, ParkingType.CAR, false);
+        ticket.setInTime(inTime);
+        ticket.setOutTime(outTime);
+        ticket.setParkingSpot(parkingSpot);
+        boolean discount = true;
+        fareCalculatorService.calculateFare(ticket, discount);
+        assertEquals(1.06875,ticket.getPrice(),0.1);
+    }
+
+    @Test
+    public void calculateFareBikeWithDiscount() {
+        Date inTime = new Date();
+        inTime.setTime(System.currentTimeMillis() - (45 * 60 * 1000));
+        Date outTime = new Date();
+        outTime.setTime(System.currentTimeMillis());
+        ParkingSpot parkingSpot = new ParkingSpot(1, ParkingType.BIKE, false);
+        ticket.setInTime(inTime);
+        ticket.setOutTime(outTime);
+        ticket.setParkingSpot(parkingSpot);
+        boolean discount = true;
+        fareCalculatorService.calculateFare(ticket, discount);
+        assertEquals(0.7125,ticket.getPrice(),0.1);
     }
 }
