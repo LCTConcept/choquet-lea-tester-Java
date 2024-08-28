@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Date;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,31 +34,89 @@ public class ParkingServiceTest {
     @BeforeEach
     public void setUpPerTest() {
         try {
-            when(inputReaderUtil.readVehicleRegistrationNumber()).thenReturn("ABCDEF");
+            //Configuration communes à tous les tests à venir.
 
-            ParkingSpot parkingSpot = new ParkingSpot(1, ParkingType.CAR,false);
+            lenient().when(inputReaderUtil.readVehicleRegistrationNumber()).thenReturn("ABCDEF");
+
+            ParkingSpot parkingSpot = new ParkingSpot(1, ParkingType.CAR, false);
             Ticket ticket = new Ticket();
-            ticket.setInTime(new Date(System.currentTimeMillis() - (60*60*1000)));
+            ticket.setInTime(new Date(System.currentTimeMillis() - (60 * 60 * 1000)));
             ticket.setParkingSpot(parkingSpot);
             ticket.setVehicleRegNumber("ABCDEF");
-            when(ticketDAO.getTicket(anyString())).thenReturn(ticket);
-            when(ticketDAO.updateTicket(any(Ticket.class))).thenReturn(true);
-            when(parkingSpotDAO.updateParking(any(ParkingSpot.class))).thenReturn(true);
-            when(ticketDAO.countTicketByVehicleRegNumber("ABCDEF")).thenReturn(1);
+
+            //Lenient permet de ne pas avoir d'erreurs si les conditions ne sont pas utilisées dans un test.
+            lenient().when(ticketDAO.getTicket(anyString())).thenReturn(ticket);
+            lenient().when(ticketDAO.updateTicket(any(Ticket.class))).thenReturn(true);
+            lenient().when(parkingSpotDAO.updateParking(any(ParkingSpot.class))).thenReturn(true);
+            lenient().when(ticketDAO.countTicketByVehicleRegNumber("ABCDEF")).thenReturn(1);
+            lenient().when(ticketDAO.saveTicket(any(Ticket.class))).thenReturn(true);
+
 
             parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAO);
         } catch (Exception e) {
             e.printStackTrace();
-            throw  new RuntimeException("Failed to set up test mock objects");
+            throw new RuntimeException("Failed to set up test mock objects");
         }
     }
 
     @Test
-    public void processExitingVehicleTest(){
+    public void processExitingVehicleTest() {
+        //Condition du test = Setup commun.
+        //Execution de la méthode à tester
         parkingService.processExitingVehicle();
+        //Condition de réussite du test
         verify(parkingSpotDAO, Mockito.times(1)).updateParking(any(ParkingSpot.class));
-        verify(ticketDAO,Mockito.times(1)).countTicketByVehicleRegNumber("ABCDEF");
+        verify(ticketDAO, Mockito.times(1)).countTicketByVehicleRegNumber("ABCDEF");
+    }
+
+    @Test
+    public void testProcessIncomingVehicle() throws Exception {
+
+        // Condition du test
+        ParkingSpot parkingSpot = new ParkingSpot(1, ParkingType.CAR, true);  // La place de parking est actuellement disponible
+        when(inputReaderUtil.readSelection()).thenReturn(1);  // Simuler la sélection du type de véhicule (voiture)
+        when(parkingSpotDAO.getNextAvailableSlot(any(ParkingType.class))).thenReturn(1);  // Simuler un emplacement disponible
+
+        // Exécution de la méthode à tester
+        parkingService.processIncomingVehicle();
+
+        // Condition de réussite du test
+        verify(parkingSpotDAO, Mockito.times(1)).getNextAvailableSlot(any(ParkingType.class));
+        verify(inputReaderUtil, Mockito.times(1)).readSelection();
+        verify(inputReaderUtil, Mockito.times(1)).readVehicleRegistrationNumber();
+        verify(ticketDAO, Mockito.times(1)).saveTicket(any(Ticket.class));
+        verify(parkingSpotDAO, Mockito.times(1)).updateParking(any(ParkingSpot.class));
+    }
+
+    @Test
+    public void processExitingVehicleTestUnableUpdate(){
+        //Condition du test
+        ParkingSpot parkingSpot = new ParkingSpot(1, ParkingType.CAR, false);
+        when(ticketDAO.updateTicket(any(Ticket.class))).thenReturn(false);
+        //Execution du test
+        parkingService.processExitingVehicle();
+        //Condition de réussite du test
+        verify(parkingSpotDAO, never()).updateParking(parkingSpot);
+    }
+
+    @Test
+    public void testGetNextParkingNumberIfAvailable(){
+        //Condition du test
+        ParkingSpot ParkingSpot = new ParkingSpot(1, ParkingType.CAR, true);
+        when(inputReaderUtil.readSelection()).thenReturn(1);
+        when(parkingSpotDAO.getNextAvailableSlot(ParkingType.CAR)).thenReturn(ParkingSpot.getId());
+        //Execution du test
+        ParkingSpot resultParkingSpot = parkingService.getNextParkingNumberIfAvailable();
+        // Condition de réussite du test
+        assertNotNull(resultParkingSpot);
+        assertEquals(1, resultParkingSpot.getId());
+        assertTrue(resultParkingSpot.isAvailable());
+        verify(parkingSpotDAO, times(1)).getNextAvailableSlot(ParkingType.CAR);
+
     }
 
 
 }
+
+
+
