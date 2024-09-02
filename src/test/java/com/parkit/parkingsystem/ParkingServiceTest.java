@@ -89,7 +89,7 @@ public class ParkingServiceTest {
     }
 
     @Test
-    public void processExitingVehicleTestUnableUpdate(){
+    public void processExitingVehicleTestUnableUpdate() {
         //Condition du test
         ParkingSpot parkingSpot = new ParkingSpot(1, ParkingType.CAR, false);
         when(ticketDAO.updateTicket(any(Ticket.class))).thenReturn(false);
@@ -100,7 +100,7 @@ public class ParkingServiceTest {
     }
 
     @Test
-    public void testGetNextParkingNumberIfAvailable(){
+    public void testGetNextParkingNumberIfAvailable() {
         //Condition du test
         ParkingSpot ParkingSpot = new ParkingSpot(1, ParkingType.CAR, true);
         when(inputReaderUtil.readSelection()).thenReturn(1);
@@ -115,8 +115,34 @@ public class ParkingServiceTest {
 
     }
 
+    @Test
+    public void testGetNextParkingNumberIfAvailableParkingNumberNotFound() {
+        //Condition du test
+        ParkingSpot ParkingSpot = new ParkingSpot(-1, ParkingType.CAR, false);
+        when(inputReaderUtil.readSelection()).thenReturn(1);
+        when(parkingSpotDAO.getNextAvailableSlot(ParkingType.CAR)).thenReturn(ParkingSpot.getId());
+        //Execution du test
+        ParkingSpot resultParkingSpot = parkingService.getNextParkingNumberIfAvailable();
+        // Condition de réussite du test
+        assertNull(resultParkingSpot);
+        verify(parkingSpotDAO, times(1)).getNextAvailableSlot(ParkingType.CAR);
+    }
+
+    @Test
+    public void testGetNextParkingNumberIfAvailableParkingNumberWrongArgument() {
+        //Condition du test
+        when(inputReaderUtil.readSelection()).thenReturn(3);
+        //Execution du test
+        ParkingSpot resultParkingSpot = parkingService.getNextParkingNumberIfAvailable();
+        // Condition de réussite du test
+        assertNull(resultParkingSpot);
+        verify(parkingSpotDAO,never()).getNextAvailableSlot(any());
+    }
 
 }
+
+
+
 
 
 
