@@ -139,6 +139,18 @@ public class ParkingServiceTest {
         verify(parkingSpotDAO,never()).getNextAvailableSlot(any());
     }
 
+    @Test
+    public void testGetNextParkingNumberIfAvailableNoParkingAvailable(){
+        //Condition du test
+        when(inputReaderUtil.readSelection()).thenReturn(1);
+        when(parkingSpotDAO.getNextAvailableSlot(ParkingType.CAR)).thenReturn(0);
+        //Execution du test
+        ParkingSpot resultParkingSpot = parkingService.getNextParkingNumberIfAvailable();
+        // Condition de réussite du test
+        assertNull(resultParkingSpot);
+        verify(parkingSpotDAO, times(1)).getNextAvailableSlot(ParkingType.CAR);
+    }
+
 }
 
 
