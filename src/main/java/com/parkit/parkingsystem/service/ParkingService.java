@@ -48,7 +48,9 @@ public class ParkingService {
                 //Vérif si client régulier
                 int numberOfTickets = ticketDAO.countTicketByVehicleRegNumber(vehicleRegNumber);
                 boolean hasDiscount = numberOfTickets > 1;
-                System.out.println("Heureux de vous revoir ! En tant qu’utilisateur régulier de notre parking, vous allez obtenir une remise de 5%");
+                if (hasDiscount) {
+                    System.out.println("Heureux de vous revoir ! En tant qu’utilisateur régulier de notre parking, vous allez obtenir une remise de 5%");
+                }
 
                 //Reprendre schéma normal
                 System.out.println("Generated Ticket and saved in DB");
