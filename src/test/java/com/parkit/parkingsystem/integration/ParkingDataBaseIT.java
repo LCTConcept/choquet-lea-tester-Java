@@ -18,9 +18,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 
 import static junit.framework.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -75,18 +78,96 @@ public class ParkingDataBaseIT {
         assertFalse(testParkingSpot.isAvailable());
     }
 
-    /* TEST EN COURS D'ANALYSE
-
     @Test
     public void testParkingLotExit() throws Exception {
+        // Condition du test + "entrée du véhicule"
+        TicketDAO ticketDAOspy = spy(ticketDAO);
+        ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAOspy);
 
-        //Condition du test + "entrée du véhicule"
-        ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAO);
+
         parkingService.processIncomingVehicle();
 
-        Ticket ticket = ticketDAO.getTicket("ABCDEF");
-        assertNotNull(ticket);
+        // Récup et mise à jour du ticket en base
+        Ticket entryTicket = ticketDAO.getTicket("ABCDEF");
+        assertNotNull(entryTicket);
 
+        // Espion basé sur le vrai ticket pour forcer l'heure de sortie a 1h plus tard
+        Ticket entryTicketSpy = spy(entryTicket);
+        Date currentTime = new Date();
+        Instant currentInstant = currentTime.toInstant();
+        Instant outInstant = currentInstant.plus
+                (Duration.ofHours(1));
+        Date outTime = Date.from(outInstant);
+        // Quand la méthode de calcul aura besoin de l'heure de sortie, on renvoie la
+        // modifiée
+        when(entryTicketSpy.getOutTime()).thenReturn(outTime);
 
-     */
+        // Forcer le retour du ticket avec le comportement modifié pour tester le calcul
+        // du prix
+        when(ticketDAOspy.getTicket("ABCDEF")).thenReturn(entryTicketSpy);
+
+        parkingService.processExitingVehicle();
+
+        // Mise à jour du ticket à la sortie
+        Ticket exitTicket = ticketDAO.getTicket("ABCDEF");
+        assertNotNull(exitTicket);
+
+        // Vérification que l'heure de sortie est mise à jour
+        assertNotNull(exitTicket.getOutTime());
+        assertEquals(1.5,entryTicketSpy.getPrice(),0.1);
     }
+
+    @Test
+    public void testParkingLotExitRecurringUser() throws Exception {
+        TicketDAO ticketDAOspy = spy(ticketDAO);
+
+        ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAOspy);
+        // On fait rentrer le vehicule une premiere fois
+        parkingService.processIncomingVehicle();
+
+        Ticket firstTicket = ticketDAO.getTicket("ABCDEF");
+        // Espion basé sur le vrai ticket pour forcer l'heure de sortie à 25 min plus tard
+        Ticket firstTicketSpy = spy(firstTicket);
+        Date currentTime = new Date();
+        Instant currentInstant = currentTime.toInstant();
+        Instant outInstant = currentInstant.plus
+                (Duration.ofMinutes(25));
+        Date outTime = Date.from(outInstant);
+        // Quand la méthode de calcul aura besoin de l'heure de sortie, on renvoie la
+        // modifiée
+        when(firstTicketSpy.getOutTime()).thenReturn(outTime);
+        when(ticketDAOspy.getTicket("ABCDEF")).thenReturn(firstTicketSpy);
+        parkingService.processExitingVehicle();
+
+        // Puis on le refait rentrer
+        parkingService.processIncomingVehicle();
+
+        // On récupère le ticket pour modifier la date de sortie
+        Ticket secondTicket = ticketDAO.getTicket("ABCDEF");
+        // Espion basé sur le vrai ticket pour forcer l'heure de sortie a 1h plus tard
+        Ticket secondTicketSpy = spy(secondTicket);
+        currentTime = new Date();
+        currentInstant = currentTime.toInstant();
+        outInstant = currentInstant.plus
+                        (Duration.ofHours(1));
+        outTime = Date.from(outInstant);
+        // Quand la méthode de calcul aura besoin de l'heure de sortie, on renvoie la
+        // modifiée
+        when(secondTicketSpy.getOutTime()).thenReturn(outTime);
+
+        // Forcer le retour du ticket avec le comportement modifié pour tester le calcul
+        // du prix
+        when(ticketDAOspy.getTicket("ABCDEF")).thenReturn(secondTicketSpy);
+
+        parkingService.processExitingVehicle();
+
+        // On test que le véhicule est bien passé 2x
+        int count = ticketDAO.countTicketByVehicleRegNumber("ABCDEF");
+        assertEquals(count, 2);
+        // On test les prix des différents passages
+        assertEquals(firstTicketSpy.getPrice(), 0.0);
+        assertEquals(1.5,secondTicketSpy.getPrice(),0.1);
+    }
+
+
+}

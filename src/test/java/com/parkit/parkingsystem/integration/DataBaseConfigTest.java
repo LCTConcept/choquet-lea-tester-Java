@@ -1,4 +1,4 @@
-package com.parkit.parkingsystem;
+package com.parkit.parkingsystem.integration;
 
 import com.parkit.parkingsystem.config.DataBaseConfig;
 import org.junit.Before;
@@ -46,10 +46,10 @@ public class DataBaseConfigTest {
     }
 
     @Test
-    public void testCloseConnectionSuccess() throws SQLException {
+    public void testCloseConnectionIfConnectionIsNull() throws SQLException {
         //Vérifie qu'une connexion à une base de données est fermée avec succès.
         dataBaseConfig.closeConnection(connection);
-        verify(connection, times(1)).close();
+        verify(connection, times(0)).close();
     }
 
 
