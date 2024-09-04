@@ -1,17 +1,21 @@
 package com.parkit.parkingsystem.integration;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import com.parkit.parkingsystem.constants.ParkingType;
 import com.parkit.parkingsystem.model.ParkingSpot;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class ParkingSpotTest {
 
     private ParkingSpot parkingSpot;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         parkingSpot = new ParkingSpot(1, ParkingType.CAR, true);
     }

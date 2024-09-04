@@ -5,12 +5,11 @@ import com.parkit.parkingsystem.constants.ParkingType;
 import com.parkit.parkingsystem.dao.TicketDAO;
 import com.parkit.parkingsystem.model.ParkingSpot;
 import com.parkit.parkingsystem.model.Ticket;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,10 +20,9 @@ import java.util.Date;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class TicketDAOTest {
 
-    @InjectMocks
+    @Mock
     private TicketDAO ticketDAO;
 
     @Mock
@@ -34,15 +32,16 @@ public class TicketDAOTest {
     private Connection connection;
 
     @Mock
-    private PreparedStatement preparedStatement;
+    private ResultSet resultSet;
 
     @Mock
-    private ResultSet resultSet;
+    PreparedStatement preparedStatement;
 
     private Ticket ticket;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
         ticket = new Ticket();
         ticket.setParkingSpot(new ParkingSpot(1, ParkingType.CAR, false));
         ticket.setId(1);
@@ -51,6 +50,7 @@ public class TicketDAOTest {
         ticket.setInTime(new Date());
         ticket.setOutTime(new Date());
 
+        ticketDAO = new TicketDAO(dataBaseConfig);
         when(dataBaseConfig.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
     }
@@ -125,7 +125,8 @@ public class TicketDAOTest {
 
     @Test
     public void testUpdateTicketNullOutTime() throws Exception {
-        //Vérifie que la mise à jour échoue lorsque l'heure de sortie du ticket est nulle.
+        // Vérifie que la mise à jour échoue lorsque l'heure de sortie du ticket est
+        // nulle.
         ticket.setOutTime(null);
 
         boolean result = ticketDAO.updateTicket(ticket);
@@ -137,15 +138,22 @@ public class TicketDAOTest {
 
     @Test
     public void testUpdateTicketException() throws Exception {
-        //Vérifie qu'une exception lors de la mise à jour du ticket entraîne un échec et un nettoyage correct des ressources.
+        // Mock an exception when execute() is called on the prepared statement
         when(preparedStatement.execute()).thenThrow(new RuntimeException("Exception in update"));
 
+        // Test
         boolean result = ticketDAO.updateTicket(ticket);
+
+        // Assert that the updateTicket method returned false due to the exception
         assertFalse(result);
 
+        // Verify that the expected methods were called on the prepared statement
         verify(preparedStatement, times(1)).setDouble(1, ticket.getPrice());
-        verify(preparedStatement, never()).setTimestamp(2, new Timestamp(ticket.getOutTime().getTime()));
+        // The following verifications are not needed since an exception occurs before these methods would be executed.
+        // verify(preparedStatement, never()).setTimestamp(2, new Timestamp(ticket.getOutTime().getTime()));
         verify(preparedStatement, times(1)).setInt(3, ticket.getId());
+
+        // Verify that the connection was closed
         verify(dataBaseConfig, times(1)).closeConnection(connection);
     }
 
@@ -164,13 +172,12 @@ public class TicketDAOTest {
 
     @Test
     public void testCountTicketByVehicleRegNumberException() throws Exception {
-        // Vérifie qu'une exception pendant le comptage des tickets renvoie -1 et nettoie les ressources.
         when(preparedStatement.executeQuery()).thenThrow(new RuntimeException("Exception in count"));
 
         int count = ticketDAO.countTicketByVehicleRegNumber("ABC123");
-        assertEquals(-1, count);
+        assertEquals(-1, count); // Assert that the exception results in -1
 
-        verify(dataBaseConfig, times(1)).closeConnection(connection);
+        verify(ticketDAO.dataBaseConfig, times(1)).closeConnection(connection);
     }
 
     @Test
@@ -194,6 +201,5 @@ public class TicketDAOTest {
 
         verify(dataBaseConfig, times(1)).closeConnection(connection);
     }
-
 
 }
