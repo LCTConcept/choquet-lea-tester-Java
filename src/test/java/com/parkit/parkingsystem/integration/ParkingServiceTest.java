@@ -61,9 +61,11 @@ public class ParkingServiceTest {
 
     @Test
     public void processExitingVehicleTest() {
-        //Condition du test = Setup commun.
+        // Teste si la méthode de sortie du véhicule met correctement à jour la place de parking et compte le nombre de tickets pour un véhicule spécifique.
+
         //Execution de la méthode à tester
         parkingService.processExitingVehicle();
+
         //Condition de réussite du test
         verify(parkingSpotDAO, Mockito.times(1)).updateParking(any(ParkingSpot.class));
         verify(ticketDAO, Mockito.times(1)).countTicketByVehicleRegNumber("ABCDEF");
@@ -71,6 +73,7 @@ public class ParkingServiceTest {
 
     @Test
     public void testProcessIncomingVehicle() throws Exception {
+        // Teste si la méthode d'entrée du véhicule réserve correctement une place de parking et enregistre un ticket.
 
         // Condition du test
         ParkingSpot parkingSpot = new ParkingSpot(1, ParkingType.CAR, true);  // La place de parking est actuellement disponible
@@ -90,23 +93,31 @@ public class ParkingServiceTest {
 
     @Test
     public void processExitingVehicleTestUnableUpdate() {
+        // Teste le comportement du système lorsque la mise à jour du ticket échoue, en s'assurant que la place de parking n'est pas mise à jour.
+
         //Condition du test
         ParkingSpot parkingSpot = new ParkingSpot(1, ParkingType.CAR, false);
         when(ticketDAO.updateTicket(any(Ticket.class))).thenReturn(false);
+
         //Execution du test
         parkingService.processExitingVehicle();
+
         //Condition de réussite du test
         verify(parkingSpotDAO, never()).updateParking(parkingSpot);
     }
 
     @Test
     public void testGetNextParkingNumberIfAvailable() {
+        // Teste si la méthode récupère correctement le prochain numéro de place de parking disponible.
+
         //Condition du test
         ParkingSpot ParkingSpot = new ParkingSpot(1, ParkingType.CAR, true);
         when(inputReaderUtil.readSelection()).thenReturn(1);
         when(parkingSpotDAO.getNextAvailableSlot(ParkingType.CAR)).thenReturn(ParkingSpot.getId());
+
         //Execution du test
         ParkingSpot resultParkingSpot = parkingService.getNextParkingNumberIfAvailable();
+
         // Condition de réussite du test
         assertNotNull(resultParkingSpot);
         assertEquals(1, resultParkingSpot.getId());
@@ -117,12 +128,16 @@ public class ParkingServiceTest {
 
     @Test
     public void testGetNextParkingNumberIfAvailableParkingNumberNotFound() {
+        // Teste le comportement lorsque le prochain numéro de place de parking disponible n'est pas trouvé.
+
         //Condition du test
         ParkingSpot ParkingSpot = new ParkingSpot(-1, ParkingType.CAR, false);
         when(inputReaderUtil.readSelection()).thenReturn(1);
         when(parkingSpotDAO.getNextAvailableSlot(ParkingType.CAR)).thenReturn(ParkingSpot.getId());
+
         //Execution du test
         ParkingSpot resultParkingSpot = parkingService.getNextParkingNumberIfAvailable();
+
         // Condition de réussite du test
         assertNull(resultParkingSpot);
         verify(parkingSpotDAO, times(1)).getNextAvailableSlot(ParkingType.CAR);
@@ -130,10 +145,14 @@ public class ParkingServiceTest {
 
     @Test
     public void testGetNextParkingNumberIfAvailableParkingNumberWrongArgument() {
+        // Teste le comportement lorsque le type de véhicule sélectionné est invalide ou non pris en charge.
+
         //Condition du test
         when(inputReaderUtil.readSelection()).thenReturn(3);
+
         //Execution du test
         ParkingSpot resultParkingSpot = parkingService.getNextParkingNumberIfAvailable();
+
         // Condition de réussite du test
         assertNull(resultParkingSpot);
         verify(parkingSpotDAO,never()).getNextAvailableSlot(any());
@@ -141,11 +160,15 @@ public class ParkingServiceTest {
 
     @Test
     public void testGetNextParkingNumberIfAvailableNoParkingAvailable(){
+        // Teste le comportement lorsque aucune place de parking n'est disponible.
+
         //Condition du test
         when(inputReaderUtil.readSelection()).thenReturn(1);
         when(parkingSpotDAO.getNextAvailableSlot(ParkingType.CAR)).thenReturn(0);
+
         //Execution du test
         ParkingSpot resultParkingSpot = parkingService.getNextParkingNumberIfAvailable();
+
         // Condition de réussite du test
         assertNull(resultParkingSpot);
         verify(parkingSpotDAO, times(1)).getNextAvailableSlot(ParkingType.CAR);

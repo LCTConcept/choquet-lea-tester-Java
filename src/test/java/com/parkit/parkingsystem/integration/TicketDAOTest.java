@@ -125,8 +125,7 @@ public class TicketDAOTest {
 
     @Test
     public void testUpdateTicketNullOutTime() throws Exception {
-        // Vérifie que la mise à jour échoue lorsque l'heure de sortie du ticket est
-        // nulle.
+        // Vérifie que la mise à jour échoue lorsque l'heure de sortie du ticket est null.
         ticket.setOutTime(null);
 
         boolean result = ticketDAO.updateTicket(ticket);
@@ -138,22 +137,22 @@ public class TicketDAOTest {
 
     @Test
     public void testUpdateTicketException() throws Exception {
-        // Mock an exception when execute() is called on the prepared statement
+        // Simuler une exception lorsque execute() est appelé sur le prepared statement
         when(preparedStatement.execute()).thenThrow(new RuntimeException("Exception in update"));
 
         // Test
         boolean result = ticketDAO.updateTicket(ticket);
 
-        // Assert that the updateTicket method returned false due to the exception
+        // Vérifie que la méthode updateTicket a retourné false en raison de l'exception
         assertFalse(result);
 
-        // Verify that the expected methods were called on the prepared statement
+        // Vérifie que les méthodes attendues ont été appelées
         verify(preparedStatement, times(1)).setDouble(1, ticket.getPrice());
-        // The following verifications are not needed since an exception occurs before these methods would be executed.
+        // Les vérifications suivantes ne sont pas nécessaires car une exception se produit avant que ces méthodes puissent être exécutées :
         // verify(preparedStatement, never()).setTimestamp(2, new Timestamp(ticket.getOutTime().getTime()));
         verify(preparedStatement, times(1)).setInt(3, ticket.getId());
 
-        // Verify that the connection was closed
+        // Vérifie que la connexion a été fermée
         verify(dataBaseConfig, times(1)).closeConnection(connection);
     }
 
@@ -172,6 +171,7 @@ public class TicketDAOTest {
 
     @Test
     public void testCountTicketByVehicleRegNumberException() throws Exception {
+        // Simule une exception lorsque executeQuery() est appelé
         when(preparedStatement.executeQuery()).thenThrow(new RuntimeException("Exception in count"));
 
         int count = ticketDAO.countTicketByVehicleRegNumber("ABC123");
@@ -182,7 +182,7 @@ public class TicketDAOTest {
 
     @Test
     public void testUpdateTicketConnectionException() throws Exception {
-        // Simuler une exception lorsque la connexion à la base de données échoue
+        // Simule une exception lorsque la connexion à la base de données échoue
         when(dataBaseConfig.getConnection()).thenThrow(new RuntimeException("Exception in connection"));
 
         boolean result = ticketDAO.updateTicket(ticket);
@@ -193,7 +193,7 @@ public class TicketDAOTest {
 
     @Test
     public void testUpdateTicketPreparedStatementException() throws Exception {
-        // Simuler une exception lors de la préparation de la requête
+        // Simule une exception lors de la préparation de la requête
         when(preparedStatement.execute()).thenThrow(new RuntimeException("Exception in execute"));
 
         boolean result = ticketDAO.updateTicket(ticket);

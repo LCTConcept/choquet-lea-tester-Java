@@ -64,16 +64,18 @@ public class ParkingDataBaseIT {
 
     @Test
     public void testParkingACar() {
-        // Condition du test
+        // Teste si le processus de parking d'une voiture enregistre correctement un ticket et met à jour la disponibilité de la place de parking dans la base de données.
         ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAO);
-        // Execution du test
+
+        // Entrée du véhicule
         parkingService.processIncomingVehicle();
-        // Condition de réussite du test "Le ticket s'enregistre dans la BDD"
+
+        // Vérifie que le ticket est bien enregistré dans la base de données
         Ticket testSavedTicket = ticketDAO.getTicket("ABCDEF");
         assertNotNull(testSavedTicket);
         assertEquals("ABCDEF", testSavedTicket.getVehicleRegNumber());
-        // Condition de réussite du test "La place de parking met à jour sa
-        // disponibilité dans la BDD"
+
+        // Vérifie que la place de parking est bien marquée comme indisponible dans la base de données
         ParkingSpot testParkingSpot = testSavedTicket.getParkingSpot();
         assertNotNull(testParkingSpot);
         assertFalse(testParkingSpot.isAvailable());
@@ -81,90 +83,99 @@ public class ParkingDataBaseIT {
 
     @Test
     public void testParkingLotExit() throws Exception {
-        // Condition du test + "entrée du véhicule"
+        // Teste si le processus de sortie de parking met correctement à jour l'heure de sortie et calcule le tarif pour 1 heure de stationnement.
+
+        // Condition du test + utilisation d'un spy pour simuler le comportement de TicketDAO
         TicketDAO ticketDAOspy = spy(ticketDAO);
         ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAOspy);
 
+        //Entrée du véhicule
         parkingService.processIncomingVehicle();
 
-        // Récup et mise à jour du ticket en base
+        // Récupération et mise à jour du ticket en base
         Ticket entryTicket = ticketDAO.getTicket("ABCDEF");
         assertNotNull(entryTicket);
 
-        // Espion basé sur le vrai ticket pour forcer l'heure de sortie a 1h plus tard
+        // Espion basé sur le vrai ticket pour forcer l'heure de sortie à 1h plus tard
         Ticket entryTicketSpy = spy(entryTicket);
         Date currentTime = new Date();
         Instant currentInstant = currentTime.toInstant();
         Instant outInstant = currentInstant.plus(Duration.ofHours(1));
         Date outTime = Date.from(outInstant);
-        // Quand la méthode de calcul aura besoin de l'heure de sortie, on renvoie la
-        // modifiée
+
+        // Quand la méthode de calcul aura besoin de l'heure de sortie, on renvoie la modifiée
         when(entryTicketSpy.getOutTime()).thenReturn(outTime);
 
-        // Forcer le retour du ticket avec le comportement modifié pour tester le calcul
-        // du prix
+        // Forcer le retour du ticket avec le comportement modifié pour tester le calcul du prix
         when(ticketDAOspy.getTicket("ABCDEF")).thenReturn(entryTicketSpy);
 
+        //Sortie du véhicule
         parkingService.processExitingVehicle();
 
         // Mise à jour du ticket à la sortie
         Ticket exitTicket = ticketDAO.getTicket("ABCDEF");
         assertNotNull(exitTicket);
 
-        // Vérification que l'heure de sortie est mise à jour
+        // Vérification que l'heure de sortie est mise à jour et que le prix est le bon
         assertNotNull(exitTicket.getOutTime());
         assertEquals(1.5, entryTicketSpy.getPrice(), 0.1);
     }
 
     @Test
     public void testParkingLotExitRecurringUser() throws Exception {
+        // Teste si un utilisateur récurrent est correctement géré avec deux sessions de parking, en vérifiant les heures de sortie et les tarifs pour chaque session.
+
+        // Condition du test + utilisation d'un spy pour simuler le comportement de TicketDAO
         TicketDAO ticketDAOspy = spy(ticketDAO);
-
         ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAOspy);
-        // On fait rentrer le vehicule une premiere fois
-        parkingService.processIncomingVehicle();
 
+        // Première entrée du véhicule
+        parkingService.processIncomingVehicle();
         Ticket firstTicket = ticketDAO.getTicket("ABCDEF");
-        // Espion basé sur le vrai ticket pour forcer l'heure de sortie à 25 min plus
-        // tard
+
+        // Espion basé sur le vrai ticket pour forcer l'heure de sortie à 25 min plus tard
         Ticket firstTicketSpy = spy(firstTicket);
         Date currentTime = new Date();
         Instant currentInstant = currentTime.toInstant();
         Instant outInstant = currentInstant.plus(Duration.ofMinutes(25));
         Date outTime = Date.from(outInstant);
-        // Quand la méthode de calcul aura besoin de l'heure de sortie, on renvoie la
-        // modifiée
+
+        // Quand la méthode de calcul aura besoin de l'heure de sortie, on renvoie la modifiée
         when(firstTicketSpy.getOutTime()).thenReturn(outTime);
         when(ticketDAOspy.getTicket("ABCDEF")).thenReturn(firstTicketSpy);
+
+        // Première sortie du véhicule
         parkingService.processExitingVehicle();
 
-        // Puis on le refait rentrer
+        // Deuxième entrée du véhicule
         parkingService.processIncomingVehicle();
 
         // On récupère le ticket pour modifier la date de sortie
         Ticket secondTicket = ticketDAO.getTicket("ABCDEF");
-        // Espion basé sur le vrai ticket pour forcer l'heure de sortie a 1h plus tard
+
+        // Espion basé sur le vrai ticket pour forcer l'heure de sortie à 1h plus tard
         Ticket secondTicketSpy = spy(secondTicket);
         currentTime = new Date();
         currentInstant = currentTime.toInstant();
         outInstant = currentInstant.plus(Duration.ofHours(1));
         outTime = Date.from(outInstant);
-        // Quand la méthode de calcul aura besoin de l'heure de sortie, on renvoie la
-        // modifiée
+
+        // Quand la méthode de calcul aura besoin de l'heure de sortie, on renvoie la modifiée
         when(secondTicketSpy.getOutTime()).thenReturn(outTime);
 
-        // Forcer le retour du ticket avec le comportement modifié pour tester le calcul
-        // du prix
+        // Forcer le retour du ticket avec le comportement modifié pour tester le calcul du prix
         when(ticketDAOspy.getTicket("ABCDEF")).thenReturn(secondTicketSpy);
 
+        //Deuxième sortie du véhicule
         parkingService.processExitingVehicle();
 
-        // On test que le véhicule est bien passé 2x
+        // Vérifie que le véhicule a deux tickets dans la base de données
         int count = ticketDAO.countTicketByVehicleRegNumber("ABCDEF");
         assertEquals(count, 2);
-        // On test les prix des différents passages
+
+        // Vérifie les prix des différents passages
         assertEquals(firstTicketSpy.getPrice(), 0.0);
-        assertEquals(1.5, secondTicketSpy.getPrice(), 0.1);
+        assertEquals(1.425, secondTicketSpy.getPrice(), 0.1);
     }
 
 }
